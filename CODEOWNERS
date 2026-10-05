@@ -1,0 +1,6 @@
+# [T2] pipeline compromise: security team must review anything that can weaken a gate.
+/.github/workflows/   @org/security-team
+/.security/           @org/security-team
+/cosign.pub           @org/security-team   # swapping this key would make admission trust an attacker's signatures
+/policies/            @org/security-team
+/infra/               @org/platform-team @org/security-team

@@ -1,0 +1,52 @@
+# Section 5: signed images only. Threat [T1] supply chain, [T2] pipeline compromise.
+# MODE day one: Audit.  Why: the signing pipeline is new and cosign.pub is not populated until the KMS key exists;
+#   enforcing now would block every deploy including good ones (a shared cluster is a rollout problem).
+# PROMOTE to Enforce when: every running accounts-api pod has passed this check in Audit for 14 consecutive days
+#   (policy report shows 0 failures), and the key-rotation overlap plan (two keys listed) has been rehearsed.
+# NOT testable with `kyverno test` offline: verification needs registry access. Verified in a kind cluster or on first deploy.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: accounts-verify-images
+spec:
+  validationFailureAction: Audit
+  background: false
+  webhookTimeoutSeconds: 30
+  rules:
+    - name: signed-by-pipeline-kms-key
+      match:
+        any:
+          - resources: { kinds: [Pod], namespaces: [accounts] }
+      verifyImages:
+        - imageReferences:
+            - "123456789012.dkr.ecr.ap-south-1.amazonaws.com/accounts-api*"
+          required: true
+          verifyDigest: true
+          mutateDigest: false      # required by Kyverno when the policy is in Audit
+          attestors:
+            - count: 1
+              entries:
+                - keys:
+                    # Contents of cosign.pub (KMS public key). Placeholder until `terraform apply`.
+                    publicKeys: |-
+                      -----BEGIN PUBLIC KEY-----
+                      REPLACE-WITH-cosign.pub
+                      -----END PUBLIC KEY-----
+                    rekor:
+                      ignoreTlog: true     # no public transparency log by design (see section 2)
+                    ctlog:
+                      ignoreSCT: true
+          attestations:
+            - type: https://cyclonedx.org/bom   # the SBOM attested in build-release.yml
+              attestors:
+                - count: 1
+                  entries:
+                    - keys:
+                        publicKeys: |-
+                          -----BEGIN PUBLIC KEY-----
+                          REPLACE-WITH-cosign.pub
+                          -----END PUBLIC KEY-----
+                        rekor:
+                          ignoreTlog: true
+                        ctlog:
+                          ignoreSCT: true

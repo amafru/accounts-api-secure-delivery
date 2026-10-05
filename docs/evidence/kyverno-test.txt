@@ -1,0 +1,83 @@
+Loading test  ( policies/kyverno/tests/after/kyverno-test.yaml ) ...
+  Loading values/variables ...
+  Loading policies ...
+  Warning: policies/kyverno/accounts-baseline.yaml: kyverno.io/v1 ClusterPolicy is deprecated and will be removed in a future release; migrate to ValidatingPolicy, MutatingPolicy, GeneratingPolicy or ImageValidatingPolicy (policies.kyverno.io), see https://kyverno.io/docs/guides/migration-to-cel/
+  Warning: policies/kyverno/accounts-baseline.yaml: kyverno.io/v1 ClusterPolicy is deprecated and will be removed in a future release; migrate to ValidatingPolicy, MutatingPolicy, GeneratingPolicy or ImageValidatingPolicy (policies.kyverno.io), see https://kyverno.io/docs/guides/migration-to-cel/
+  Warning: policies/kyverno/accounts-baseline.yaml: kyverno.io/v1 ClusterPolicy is deprecated and will be removed in a future release; migrate to ValidatingPolicy, MutatingPolicy, GeneratingPolicy or ImageValidatingPolicy (policies.kyverno.io), see https://kyverno.io/docs/guides/migration-to-cel/
+  Loading resources ...
+  Loading exceptions ...
+  Applying 3 policies to 4 resources with 0 exceptions ...
+  Checking results ...
+
+│──────────│────────────────────────────│───────────────────────────────│────────────────────────────────────────────────────────────────│────────│──────────│
+│ [40;32mID (32) [0m │ [40;32mPOLICY                    [0m │ [40;32mRULE                         [0m │ [40;32mRESOURCE                                                      [0m │ [40;32mRESULT[0m │ [40;32mREASON  [0m │
+│──────────│────────────────────────────│───────────────────────────────│────────────────────────────────────────────────────────────────│────────│──────────│
+│ 1        │ accounts-baseline-critical │ autogen-no-privileged         │ v1/ServiceAccount/accounts/accounts-api                        │ Pass   │ Excluded │
+│ 2        │ accounts-baseline-critical │ autogen-no-privileged         │ apps/v1/Deployment/accounts/accounts-api                       │ Pass   │ Ok       │
+│ 3        │ accounts-baseline-critical │ autogen-no-privileged         │ rbac.authorization.k8s.io/v1/Role/accounts/accounts-api        │ Pass   │ Excluded │
+│ 4        │ accounts-baseline-critical │ autogen-no-privileged         │ rbac.authorization.k8s.io/v1/RoleBinding/accounts/accounts-api │ Pass   │ Excluded │
+│ 5        │ accounts-baseline-critical │ autogen-no-host-namespaces    │ rbac.authorization.k8s.io/v1/Role/accounts/accounts-api        │ Pass   │ Excluded │
+│ 6        │ accounts-baseline-critical │ autogen-no-host-namespaces    │ rbac.authorization.k8s.io/v1/RoleBinding/accounts/accounts-api │ Pass   │ Excluded │
+│ 7        │ accounts-baseline-critical │ autogen-no-host-namespaces    │ v1/ServiceAccount/accounts/accounts-api                        │ Pass   │ Excluded │
+│ 8        │ accounts-baseline-critical │ autogen-no-host-namespaces    │ apps/v1/Deployment/accounts/accounts-api                       │ Pass   │ Ok       │
+│ 9        │ accounts-baseline-critical │ autogen-no-hostpath           │ rbac.authorization.k8s.io/v1/RoleBinding/accounts/accounts-api │ Pass   │ Excluded │
+│ 10       │ accounts-baseline-critical │ autogen-no-hostpath           │ v1/ServiceAccount/accounts/accounts-api                        │ Pass   │ Excluded │
+│ 11       │ accounts-baseline-critical │ autogen-no-hostpath           │ apps/v1/Deployment/accounts/accounts-api                       │ Pass   │ Ok       │
+│ 12       │ accounts-baseline-critical │ autogen-no-hostpath           │ rbac.authorization.k8s.io/v1/Role/accounts/accounts-api        │ Pass   │ Excluded │
+│ 13       │ accounts-baseline-hygiene  │ autogen-nonroot-hardening     │ rbac.authorization.k8s.io/v1/RoleBinding/accounts/accounts-api │ Pass   │ Excluded │
+│ 14       │ accounts-baseline-hygiene  │ autogen-nonroot-hardening     │ v1/ServiceAccount/accounts/accounts-api                        │ Pass   │ Excluded │
+│ 15       │ accounts-baseline-hygiene  │ autogen-nonroot-hardening     │ apps/v1/Deployment/accounts/accounts-api                       │ Pass   │ Ok       │
+│ 16       │ accounts-baseline-hygiene  │ autogen-nonroot-hardening     │ rbac.authorization.k8s.io/v1/Role/accounts/accounts-api        │ Pass   │ Excluded │
+│ 17       │ accounts-baseline-hygiene  │ autogen-require-resources     │ v1/ServiceAccount/accounts/accounts-api                        │ Pass   │ Excluded │
+│ 18       │ accounts-baseline-hygiene  │ autogen-require-resources     │ apps/v1/Deployment/accounts/accounts-api                       │ Pass   │ Ok       │
+│ 19       │ accounts-baseline-hygiene  │ autogen-require-resources     │ rbac.authorization.k8s.io/v1/Role/accounts/accounts-api        │ Pass   │ Excluded │
+│ 20       │ accounts-baseline-hygiene  │ autogen-require-resources     │ rbac.authorization.k8s.io/v1/RoleBinding/accounts/accounts-api │ Pass   │ Excluded │
+│ 21       │ accounts-baseline-hygiene  │ autogen-pinned-approved-image │ rbac.authorization.k8s.io/v1/Role/accounts/accounts-api        │ Pass   │ Excluded │
+│ 22       │ accounts-baseline-hygiene  │ autogen-pinned-approved-image │ rbac.authorization.k8s.io/v1/RoleBinding/accounts/accounts-api │ Pass   │ Excluded │
+│ 23       │ accounts-baseline-hygiene  │ autogen-pinned-approved-image │ v1/ServiceAccount/accounts/accounts-api                        │ Pass   │ Excluded │
+│ 24       │ accounts-baseline-hygiene  │ autogen-pinned-approved-image │ apps/v1/Deployment/accounts/accounts-api                       │ Pass   │ Ok       │
+│ 25       │ accounts-baseline-hygiene  │ autogen-no-secret-env         │ v1/ServiceAccount/accounts/accounts-api                        │ Pass   │ Excluded │
+│ 26       │ accounts-baseline-hygiene  │ autogen-no-secret-env         │ apps/v1/Deployment/accounts/accounts-api                       │ Pass   │ Ok       │
+│ 27       │ accounts-baseline-hygiene  │ autogen-no-secret-env         │ rbac.authorization.k8s.io/v1/Role/accounts/accounts-api        │ Pass   │ Excluded │
+│ 28       │ accounts-baseline-hygiene  │ autogen-no-secret-env         │ rbac.authorization.k8s.io/v1/RoleBinding/accounts/accounts-api │ Pass   │ Excluded │
+│ 29       │ accounts-rbac-guard        │ no-wildcard-or-secrets-rbac   │ rbac.authorization.k8s.io/v1/RoleBinding/accounts/accounts-api │ Pass   │ Excluded │
+│ 30       │ accounts-rbac-guard        │ no-wildcard-or-secrets-rbac   │ v1/ServiceAccount/accounts/accounts-api                        │ Pass   │ Excluded │
+│ 31       │ accounts-rbac-guard        │ no-wildcard-or-secrets-rbac   │ apps/v1/Deployment/accounts/accounts-api                       │ Pass   │ Excluded │
+│ 32       │ accounts-rbac-guard        │ no-wildcard-or-secrets-rbac   │ rbac.authorization.k8s.io/v1/Role/accounts/accounts-api        │ Pass   │ Ok       │
+│──────────│────────────────────────────│───────────────────────────────│────────────────────────────────────────────────────────────────│────────│──────────│
+
+Loading test  ( policies/kyverno/tests/before/kyverno-test.yaml ) ...
+  Loading values/variables ...
+  Loading policies ...
+  Warning: policies/kyverno/accounts-baseline.yaml: kyverno.io/v1 ClusterPolicy is deprecated and will be removed in a future release; migrate to ValidatingPolicy, MutatingPolicy, GeneratingPolicy or ImageValidatingPolicy (policies.kyverno.io), see https://kyverno.io/docs/guides/migration-to-cel/
+  Warning: policies/kyverno/accounts-baseline.yaml: kyverno.io/v1 ClusterPolicy is deprecated and will be removed in a future release; migrate to ValidatingPolicy, MutatingPolicy, GeneratingPolicy or ImageValidatingPolicy (policies.kyverno.io), see https://kyverno.io/docs/guides/migration-to-cel/
+  Warning: policies/kyverno/accounts-baseline.yaml: kyverno.io/v1 ClusterPolicy is deprecated and will be removed in a future release; migrate to ValidatingPolicy, MutatingPolicy, GeneratingPolicy or ImageValidatingPolicy (policies.kyverno.io), see https://kyverno.io/docs/guides/migration-to-cel/
+  Loading resources ...
+  Loading exceptions ...
+  Applying 3 policies to 2 resources with 0 exceptions ...
+  Checking results ...
+
+│──────────│────────────────────────────│───────────────────────────────│─────────────────────────────────────────────────────────│────────│──────────│
+│ [40;32mID (16) [0m │ [40;32mPOLICY                    [0m │ [40;32mRULE                         [0m │ [40;32mRESOURCE                                               [0m │ [40;32mRESULT[0m │ [40;32mREASON  [0m │
+│──────────│────────────────────────────│───────────────────────────────│─────────────────────────────────────────────────────────│────────│──────────│
+│ 1        │ accounts-baseline-critical │ autogen-no-privileged         │ apps/v1/Deployment/accounts/accounts-api                │ Pass   │ Ok       │
+│ 2        │ accounts-baseline-critical │ autogen-no-privileged         │ rbac.authorization.k8s.io/v1/Role/accounts/accounts-api │ Pass   │ Excluded │
+│ 3        │ accounts-baseline-critical │ autogen-no-host-namespaces    │ apps/v1/Deployment/accounts/accounts-api                │ Pass   │ Ok       │
+│ 4        │ accounts-baseline-critical │ autogen-no-host-namespaces    │ rbac.authorization.k8s.io/v1/Role/accounts/accounts-api │ Pass   │ Excluded │
+│ 5        │ accounts-baseline-critical │ autogen-no-hostpath           │ apps/v1/Deployment/accounts/accounts-api                │ Pass   │ Ok       │
+│ 6        │ accounts-baseline-critical │ autogen-no-hostpath           │ rbac.authorization.k8s.io/v1/Role/accounts/accounts-api │ Pass   │ Excluded │
+│ 7        │ accounts-baseline-hygiene  │ autogen-nonroot-hardening     │ apps/v1/Deployment/accounts/accounts-api                │ Pass   │ Ok       │
+│ 8        │ accounts-baseline-hygiene  │ autogen-nonroot-hardening     │ rbac.authorization.k8s.io/v1/Role/accounts/accounts-api │ Pass   │ Excluded │
+│ 9        │ accounts-baseline-hygiene  │ autogen-require-resources     │ apps/v1/Deployment/accounts/accounts-api                │ Pass   │ Ok       │
+│ 10       │ accounts-baseline-hygiene  │ autogen-require-resources     │ rbac.authorization.k8s.io/v1/Role/accounts/accounts-api │ Pass   │ Excluded │
+│ 11       │ accounts-baseline-hygiene  │ autogen-pinned-approved-image │ apps/v1/Deployment/accounts/accounts-api                │ Pass   │ Ok       │
+│ 12       │ accounts-baseline-hygiene  │ autogen-pinned-approved-image │ rbac.authorization.k8s.io/v1/Role/accounts/accounts-api │ Pass   │ Excluded │
+│ 13       │ accounts-baseline-hygiene  │ autogen-no-secret-env         │ apps/v1/Deployment/accounts/accounts-api                │ Pass   │ Ok       │
+│ 14       │ accounts-baseline-hygiene  │ autogen-no-secret-env         │ rbac.authorization.k8s.io/v1/Role/accounts/accounts-api │ Pass   │ Excluded │
+│ 15       │ accounts-rbac-guard        │ no-wildcard-or-secrets-rbac   │ rbac.authorization.k8s.io/v1/Role/accounts/accounts-api │ Pass   │ Ok       │
+│ 16       │ accounts-rbac-guard        │ no-wildcard-or-secrets-rbac   │ apps/v1/Deployment/accounts/accounts-api                │ Pass   │ Excluded │
+│──────────│────────────────────────────│───────────────────────────────│─────────────────────────────────────────────────────────│────────│──────────│
+
+
+Test Summary: 48 tests passed and 0 tests failed
+

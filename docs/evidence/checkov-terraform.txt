@@ -1,0 +1,26 @@
+# Terraform policy test (executed 2026-10-05, checkov 3.3.23)
+=== BEFORE (must fail) ===
+Passed checks: 0, Failed checks: 10, Skipped checks: 0
+Check: CKV2_ACCT_002: "RDS storage must be encrypted"
+	FAILED for resource: aws_db_instance.accounts
+Check: CKV2_ACCT_004: "RDS must take a final snapshot on delete"
+	FAILED for resource: aws_db_instance.accounts
+Check: CKV2_ACCT_003: "RDS must keep at least 7 days of backups"
+	FAILED for resource: aws_db_instance.accounts
+Check: CKV2_ACCT_010: "Security group ingress must not be open to 0.0.0.0/0"
+	FAILED for resource: aws_security_group_rule.db_ingress
+Check: CKV2_ACCT_008: "CloudTrail must validate log files"
+	FAILED for resource: aws_cloudtrail.org
+Check: CKV2_ACCT_007: "CloudTrail must be multi-region"
+	FAILED for resource: aws_cloudtrail.org
+Check: CKV2_ACCT_006: "RDS must have deletion protection"
+	FAILED for resource: aws_db_instance.accounts
+Check: CKV2_ACCT_005: "RDS must not carry an inline password (use manage_master_user_password)"
+	FAILED for resource: aws_db_instance.accounts
+Check: CKV2_ACCT_001: "RDS must not be publicly accessible"
+	FAILED for resource: aws_db_instance.accounts
+Check: CKV2_ACCT_009: "CloudTrail must include global service events"
+	FAILED for resource: aws_cloudtrail.org
+=== AFTER (must pass) ===
+Passed checks: 10, Failed checks: 0, Skipped checks: 0
+PASS: policies reject the original and accept the fix

@@ -1,0 +1,12 @@
+# Prevents recurrence of the artefact (b) defect. Threats: T3/T4 (see docs/section4-review-remediate.md)
+metadata:
+  id: "CKV2_ACCT_006"
+  name: "RDS must have deletion protection"
+  category: "GENERAL_SECURITY"
+definition:
+  cond_type: attribute
+  resource_types:
+    - aws_db_instance
+  attribute: deletion_protection
+  operator: equals
+  value: true

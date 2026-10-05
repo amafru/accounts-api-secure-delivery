@@ -1,0 +1,19 @@
+# FAILS BEFORE the fix: the original manifest must be rejected by every rule except no-privileged
+# (it says privileged: false, which is the trap: the real danger is elsewhere).
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: accounts-baseline-before
+policies:
+  - ../../accounts-baseline.yaml
+resources:
+  - ../../../../review/workload/original/accounts-api.yaml
+results:
+  - { policy: accounts-baseline-critical, rule: autogen-no-privileged,       kind: Deployment, resources: [accounts-api], result: pass }
+  - { policy: accounts-baseline-critical, rule: autogen-no-host-namespaces,  kind: Deployment, resources: [accounts-api], result: fail }
+  - { policy: accounts-baseline-critical, rule: autogen-no-hostpath,         kind: Deployment, resources: [accounts-api], result: fail }
+  - { policy: accounts-baseline-hygiene,  rule: autogen-nonroot-hardening,   kind: Deployment, resources: [accounts-api], result: fail }
+  - { policy: accounts-baseline-hygiene,  rule: autogen-require-resources,   kind: Deployment, resources: [accounts-api], result: fail }
+  - { policy: accounts-baseline-hygiene,  rule: autogen-pinned-approved-image, kind: Deployment, resources: [accounts-api], result: fail }
+  - { policy: accounts-baseline-hygiene,  rule: autogen-no-secret-env,       kind: Deployment, resources: [accounts-api], result: fail }
+  - { policy: accounts-rbac-guard,        rule: no-wildcard-or-secrets-rbac, kind: Role,       resources: [accounts-api], result: fail }

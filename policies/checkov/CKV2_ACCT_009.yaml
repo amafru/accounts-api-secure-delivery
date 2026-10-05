@@ -1,0 +1,12 @@
+# Prevents recurrence of the artefact (b) defect. Threats: T3/T4 (see docs/section4-review-remediate.md)
+metadata:
+  id: "CKV2_ACCT_009"
+  name: "CloudTrail must include global service events"
+  category: "GENERAL_SECURITY"
+definition:
+  cond_type: attribute
+  resource_types:
+    - aws_cloudtrail
+  attribute: include_global_service_events
+  operator: equals
+  value: true

@@ -1,0 +1,18 @@
+# PASSES AFTER the fix: the fixed manifest must satisfy every rule.
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: accounts-baseline-after
+policies:
+  - ../../accounts-baseline.yaml
+resources:
+  - ../../../../review/workload/fixed/accounts-api.yaml
+results:
+  - { policy: accounts-baseline-critical, rule: autogen-no-privileged,       kind: Deployment, resources: [accounts-api], result: pass }
+  - { policy: accounts-baseline-critical, rule: autogen-no-host-namespaces,  kind: Deployment, resources: [accounts-api], result: pass }
+  - { policy: accounts-baseline-critical, rule: autogen-no-hostpath,         kind: Deployment, resources: [accounts-api], result: pass }
+  - { policy: accounts-baseline-hygiene,  rule: autogen-nonroot-hardening,   kind: Deployment, resources: [accounts-api], result: pass }
+  - { policy: accounts-baseline-hygiene,  rule: autogen-require-resources,   kind: Deployment, resources: [accounts-api], result: pass }
+  - { policy: accounts-baseline-hygiene,  rule: autogen-pinned-approved-image, kind: Deployment, resources: [accounts-api], result: pass }
+  - { policy: accounts-baseline-hygiene,  rule: autogen-no-secret-env,       kind: Deployment, resources: [accounts-api], result: pass }
+  - { policy: accounts-rbac-guard,        rule: no-wildcard-or-secrets-rbac, kind: Role,       resources: [accounts-api], result: pass }

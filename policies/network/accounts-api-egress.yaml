@@ -1,0 +1,78 @@
+# Section 5: egress control for accounts-api. Threats [T3] lateral movement and data exfiltration after RCE.
+# Layer chosen: Kubernetes NetworkPolicy (enforced by the CNI). See docs/section5-admission-runtime.md for what it fails to stop.
+# CIDRs are placeholders: 203.0.113.0/28 is a documentation range standing in for the KYC provider.
+---
+# 1. Deny everything in the namespace by default (ingress and egress).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: accounts
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+# 2. accounts-api may: resolve DNS, reach Postgres, reach the KYC provider on 443. Nothing else.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: accounts-api-egress
+  namespace: accounts
+spec:
+  podSelector:
+    matchLabels:
+      app: accounts-api
+  policyTypes: [Egress]
+  egress:
+    - to:                                  # DNS (CoreDNS only)
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+    - to:                                  # RDS Postgres (database subnet)
+        - ipBlock:
+            cidr: 10.20.30.0/24
+      ports:
+        - { protocol: TCP, port: 5432 }
+    - to:                                  # third-party KYC provider (IP-based: placeholder range)
+        - ipBlock:
+            cidr: 203.0.113.0/28
+      ports:
+        - { protocol: TCP, port: 443 }
+---
+# 3. Only the ingress controller may call the API.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: accounts-api-ingress
+  namespace: accounts
+spec:
+  podSelector:
+    matchLabels:
+      app: accounts-api
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - { protocol: TCP, port: 8080 }    # placeholder app port
+---
+# 4. Quarantine: the runbook relabels a suspect pod to app=quarantine. This keeps it running (evidence)
+#    but cuts all traffic. The default-deny above already blocks it; this makes the intent explicit.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: quarantine-deny-all
+  namespace: accounts
+spec:
+  podSelector:
+    matchLabels:
+      app: quarantine
+  policyTypes: [Ingress, Egress]

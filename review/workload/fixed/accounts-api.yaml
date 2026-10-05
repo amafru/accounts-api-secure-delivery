@@ -1,0 +1,90 @@
+# Artefact (a) fixed. Defects and ranking: docs/section4-review-remediate.md. Threats: T3, T1, T4, T5.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: accounts-api
+  namespace: accounts
+automountServiceAccountToken: true     # needed only for the single ConfigMap read in the Role below
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: accounts-api
+  namespace: accounts
+  labels:
+    app: accounts-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: accounts-api
+  template:
+    metadata:
+      labels:
+        app: accounts-api
+    spec:
+      serviceAccountName: accounts-api
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          # Pinned by digest from the approved ECR. Placeholder digest: the release pipeline writes the real one.
+          image: 123456789012.dkr.ecr.ap-south-1.amazonaws.com/accounts-api@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          securityContext:
+            privileged: false
+            runAsNonRoot: true
+            runAsUser: 10001
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: db-credentials          # secret delivered as a file, not an environment variable
+              mountPath: /var/run/secrets/db
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: db-credentials
+          secret:
+            secretName: accounts-api-db     # created by External Secrets Operator (Section 6)
+            defaultMode: 0400
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: accounts-api
+  namespace: accounts
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["accounts-api-config"]   # one named object, read-only
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: accounts-api
+  namespace: accounts
+subjects:
+  - kind: ServiceAccount
+    name: accounts-api
+    namespace: accounts
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: accounts-api

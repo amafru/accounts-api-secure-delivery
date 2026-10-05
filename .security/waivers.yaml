@@ -1,0 +1,20 @@
+# Waiver register. [T1] [T2] controls: lets a known finding ship temporarily without disabling the gate.
+# Rules (enforced by .security/check_waivers.py, which fails the build):
+#   - every field below is required
+#   - expires_on must be in the future, and at most 30 days after approved_on
+#   - the waiver covers ONE finding in ONE scope, never a whole tool or rule family
+#   - approver must be a member of the security reviewers list (see CODEOWNERS)
+#   - on lapse the entry stops suppressing the finding AND the check fails loudly
+# Changes to this file need a security CODEOWNER review and a verified (signed) commit,
+# both enforced by branch protection (repo settings, not code in this repo).
+waivers:
+  - id: W-2026-001
+    tool: trivy
+    finding: CVE-2099-0001          # example entry, replace with a real finding
+    scope: "requirements.txt:examplelib"
+    reason: "No fixed version released; not reachable (library used only in an offline script)."
+    compensating_control: "Kyverno blocks egress-capable debug pods; Falco rule watches the process tree."
+    ticket: SEC-101
+    approver: security-lead
+    approved_on: 2026-10-05
+    expires_on: 2026-11-04

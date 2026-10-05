@@ -1,0 +1,12 @@
+# Prevents recurrence of the artefact (b) defect. Threats: T3/T4 (see docs/section4-review-remediate.md)
+metadata:
+  id: "CKV2_ACCT_007"
+  name: "CloudTrail must be multi-region"
+  category: "GENERAL_SECURITY"
+definition:
+  cond_type: attribute
+  resource_types:
+    - aws_cloudtrail
+  attribute: is_multi_region_trail
+  operator: equals
+  value: true

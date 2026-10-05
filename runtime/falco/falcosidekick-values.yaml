@@ -1,0 +1,10 @@
+# Routing for the accounts-api rule (Helm values for falcosidekick). Not executed here; verify key names against your chart version.
+# Secrets (PagerDuty routing key, Slack webhook) come from an existing Kubernetes Secret, never from this file.
+falcosidekick:
+  enabled: true
+  config:
+    existingSecret: falcosidekick-secrets
+    pagerduty:
+      minimumpriority: "critical"      # CRITICAL pages the security on-call
+    slack:
+      minimumpriority: "warning"       # everything else lands in #security-alerts, no page

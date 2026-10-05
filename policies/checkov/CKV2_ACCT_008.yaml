@@ -1,0 +1,12 @@
+# Prevents recurrence of the artefact (b) defect. Threats: T3/T4 (see docs/section4-review-remediate.md)
+metadata:
+  id: "CKV2_ACCT_008"
+  name: "CloudTrail must validate log files"
+  category: "GENERAL_SECURITY"
+definition:
+  cond_type: attribute
+  resource_types:
+    - aws_cloudtrail
+  attribute: enable_log_file_validation
+  operator: equals
+  value: true

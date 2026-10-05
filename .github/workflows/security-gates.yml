@@ -1,0 +1,100 @@
+# Section 3: pipeline gates. Maps to [T1] supply chain, [T2] pipeline compromise, [T2] build secrets (secret scanning).
+# NOTE: actions use version tags in this submission. Pinning to commit SHAs is first on the
+# "Monday" list (a tag can be moved by whoever controls the action repo, which is itself [T2]).
+name: security-gates
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:            # break-glass entry point, see docs/section3-gates.md
+    inputs:
+      incident_id:
+        description: "Incident ticket (required for break-glass)"
+        required: true
+      reason:
+        description: "Why the gates are being bypassed"
+        required: true
+
+permissions:
+  contents: read               # least privilege by default; jobs raise it only if needed
+
+jobs:
+  waivers:
+    name: Waiver register (fails on lapse)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install pyyaml pytest
+      - run: cd .security && pytest -q                     # waiver logic is itself tested
+      - run: python .security/check_waivers.py .security/waivers.yaml .trivyignore
+      - uses: actions/upload-artifact@v4
+        with: { name: trivyignore, path: .trivyignore, include-hidden-files: true }   # dotfiles are skipped by default
+
+  sast:
+    name: SAST (Semgrep). Blocks on ERROR.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install semgrep
+      - run: semgrep scan --config p/ci --config p/python --severity ERROR --error .
+
+  secrets-history:
+    name: Secret scan, FULL git history (Gitleaks). Any finding blocks.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }                           # full history, not just the PR diff
+      - run: |
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest \
+            detect --source /repo --log-opts="--all" --redact --exit-code 1
+
+  sca-iac:
+    name: SCA + IaC (Trivy). Blocks on fixable HIGH/CRITICAL.
+    needs: waivers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: trivyignore }
+      - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scanners: vuln,misconfig
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true                             # only block what can actually be fixed
+          skip-dirs: review                                 # deliberately vulnerable teaching fixtures (Section 4)
+          trivyignores: .trivyignore                       # generated from ACTIVE waivers only
+          exit-code: "1"
+  
+  policy-tests:
+    name: Policy-as-code tests (must fail before the fix, pass after)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: kyverno/action-install-cli@v0.2.0
+      - run: kyverno test policies/kyverno/tests
+      - run: pip install checkov && bash policies/checkov/test.sh
+
+  break-glass-record:
+    name: Break-glass audit record
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: break-glass                               # requires 2 named approvers (repo setting)
+    permissions: { issues: write, contents: read }
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          INCIDENT_ID: ${{ inputs.incident_id }}     # via env, never pasted into the script (injection)
+          REASON: ${{ inputs.reason }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "BREAK-GLASS used: $INCIDENT_ID" \
+            --label security-review \
+            --body "Actor: $ACTOR
+          Reason: $REASON
+          Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          Post-incident review due within 24h. Gates still RAN. NOTE: lifting of blocking is not wired in this submission (see docs/section3-gates.md)."

@@ -1,0 +1,71 @@
+# Runs only on main. Merge to main requires the security-gates checks (branch protection, which is a repo setting and not codified).
+# NOTE: action versions are tags in this submission; SHA pinning is a stated roadmap task.
+# Key: 'T1' = Threat1 etc. in the threat model (Section 1). 'T2' = Threat2 etc. 'T3' = Threat3 etc.
+name: build-release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write        # needed to create the OIDC token for AWS only
+  contents: read
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_REPO: accounts-api
+  KMS_ALIAS: alias/accounts-api-signing
+
+jobs:
+  build-sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # [T2] No stored AWS keys. The role's trust policy pins sub to this repo's main branch.
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_BUILD_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # [T1] Immutable, versioned tag = commit SHA. The ECR repo is IMMUTABLE (infra/release.tf),
+      # so a tag cannot be re-pointed. Everything downstream uses the DIGEST, not the tag.
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPO }}:${{ github.sha }}
+
+      - uses: sigstore/cosign-installer@v3
+
+      # [T1] SBOM generated from the built image, then attested (signed and bound to the digest).
+      - uses: anchore/sbom-action@v0
+        with:
+          image: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPO }}@${{ steps.build.outputs.digest }}
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
+          upload-artifact: false
+
+      # Keyed signing with AWS KMS. Avoids use of the public transparency log if we went keyless with Sigstore: image names and build identities
+      # stay private (a bank constraint). The cost is that there is no public tamper-evidence.
+      - name: Sign image and attest SBOM
+        env:
+          IMAGE: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPO }}@${{ steps.build.outputs.digest }}
+        run: |
+          cosign sign --yes --key "awskms:///${KMS_ALIAS}" --tlog-upload=false "$IMAGE"
+          cosign attest --yes --key "awskms:///${KMS_ALIAS}" --tlog-upload=false \
+            --type cyclonedx --predicate sbom.cdx.json "$IMAGE"
+
+      # Verification demonstrated with the PUBLIC key only (cosign.pub, committed).
+      # This is the same check Kyverno verifyImages performs at admission (Section 5).
+      - name: Verify signature and attestation
+        env:
+          IMAGE: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPO }}@${{ steps.build.outputs.digest }}
+        run: |
+          cosign verify --key cosign.pub --insecure-ignore-tlog=true "$IMAGE"
+          cosign verify-attestation --key cosign.pub --type cyclonedx \
+            --insecure-ignore-tlog=true "$IMAGE" > /dev/null

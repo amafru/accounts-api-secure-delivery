@@ -1,0 +1,19 @@
+# No ingress rule open to 0.0.0.0/0 (the original opened Postgres to the internet). Threat: T3.
+metadata:
+  id: "CKV2_ACCT_010"
+  name: "Security group ingress must not be open to 0.0.0.0/0"
+  category: "NETWORKING"
+definition:
+  or:
+    - cond_type: attribute
+      resource_types:
+        - aws_security_group_rule
+      attribute: type
+      operator: not_equals
+      value: ingress
+    - cond_type: attribute
+      resource_types:
+        - aws_security_group_rule
+      attribute: cidr_blocks
+      operator: not_contains
+      value: "0.0.0.0/0"

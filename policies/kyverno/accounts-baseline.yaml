@@ -1,0 +1,149 @@
+# Section 4 prevention + Section 5 admission baseline. Threats: [T3] lateral movement, [T1] supply chain, [T4] secrets, [T5] DoS.
+# Scoped to the `accounts` namespace first (shared cluster: widen only after promotion criteria are met).
+# Pod rules autogenerate for Deployments/StatefulSets/DaemonSets (rule names become autogen-<name>).
+#
+# MODE (day one):  critical = Enforce   (escape and takeover paths: no legitimate use in this workload)
+#                  hygiene  = Audit     (could break working deployments; measure first)
+#                  rbac     = Enforce
+# PROMOTION audit -> enforce: 14 days of policy reports with zero violations in `accounts`, and
+#                  every owning team's exceptions merged as expiring entries (see docs/section5).
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: accounts-baseline-critical
+  annotations:
+    policies.kyverno.io/title: Block host-takeover paths
+    policies.kyverno.io/description: >-
+      privileged: false is not enough. Docker socket mounts, hostPath volumes and hostNetwork
+      each give a compromised pod a way onto the node.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: no-privileged
+      match:
+        any:
+          - resources: { kinds: [Pod], namespaces: [accounts] }
+      validate:
+        message: "Privileged containers are not allowed."
+        pattern:
+          spec:
+            containers:
+              - =(securityContext):
+                  =(privileged): "false"
+    - name: no-host-namespaces
+      match:
+        any:
+          - resources: { kinds: [Pod], namespaces: [accounts] }
+      validate:
+        message: "hostNetwork, hostPID and hostIPC are not allowed (they bypass NetworkPolicy and expose the node)."
+        pattern:
+          spec:
+            =(hostNetwork): "false"
+            =(hostPID): "false"
+            =(hostIPC): "false"
+    - name: no-hostpath
+      match:
+        any:
+          - resources: { kinds: [Pod], namespaces: [accounts] }
+      validate:
+        message: "hostPath volumes are not allowed (includes /var/run/docker.sock and /var/log)."
+        pattern:
+          spec:
+            =(volumes):
+              - X(hostPath): "null"
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: accounts-baseline-hygiene
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: nonroot-hardening
+      match:
+        any:
+          - resources: { kinds: [Pod], namespaces: [accounts] }
+      validate:
+        message: "Containers must run as non-root, with no privilege escalation and a read-only root filesystem."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  runAsNonRoot: "true"
+                  allowPrivilegeEscalation: "false"
+                  readOnlyRootFilesystem: "true"
+                  =(runAsUser): ">0"
+    - name: require-resources
+      match:
+        any:
+          - resources: { kinds: [Pod], namespaces: [accounts] }
+      validate:
+        message: "CPU and memory requests and limits are required (protects neighbours on a shared node)."
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  requests:
+                    cpu: "?*"
+                    memory: "?*"
+                  limits:
+                    cpu: "?*"
+                    memory: "?*"
+    - name: pinned-approved-image
+      match:
+        any:
+          - resources: { kinds: [Pod], namespaces: [accounts] }
+      validate:
+        message: "Images must come from the approved ECR registry and be pinned by digest (no :latest)."
+        pattern:
+          spec:
+            containers:
+              - image: "123456789012.dkr.ecr.ap-south-1.amazonaws.com/*@sha256:*"
+    - name: no-secret-env
+      match:
+        any:
+          - resources: { kinds: [Pod], namespaces: [accounts] }
+      validate:
+        message: "Secrets must be mounted as files, not exposed as environment variables."
+        pattern:
+          spec:
+            containers:
+              - =(env):
+                  - =(valueFrom):
+                      X(secretKeyRef): "null"
+                =(envFrom):
+                  - X(secretRef): "null"
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: accounts-rbac-guard
+  annotations:
+    policies.kyverno.io/description: >-
+      Namespaced Roles only. ClusterRoles are deliberately NOT matched: built-in system
+      ClusterRoles use wildcards and would be blocked.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: no-wildcard-or-secrets-rbac
+      match:
+        any:
+          - resources: { kinds: [Role], namespaces: [accounts] }
+      validate:
+        message: "Roles in this namespace may not use wildcard verbs or resources, or touch secrets."
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.rules[?contains(verbs, '*')] | length(@) }}"
+                operator: GreaterThan
+                value: 0
+              - key: "{{ request.object.rules[?contains(resources, '*')] | length(@) }}"
+                operator: GreaterThan
+                value: 0
+              - key: "{{ request.object.rules[?contains(resources, 'secrets')] | length(@) }}"
+                operator: GreaterThan
+                value: 0

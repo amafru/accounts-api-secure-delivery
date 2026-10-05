@@ -1,0 +1,44 @@
+# Artefact (a) exactly as given in the brief (reformatted for readability). DO NOT DEPLOY.
+# Kept as the "fails before" fixture for the policy tests.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: accounts-api
+  namespace: accounts
+spec:
+  replicas: 3
+  template:
+    spec:
+      serviceAccountName: accounts-api
+      hostNetwork: true
+      containers:
+        - name: api
+          image: 123456789012.dkr.ecr.ap-south-1.amazonaws.com/accounts-api:latest
+          securityContext:
+            privileged: false
+            runAsUser: 0
+          envFrom:
+            - secretRef:
+                name: accounts-api-env
+          volumeMounts:
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
+            - name: host-logs
+              mountPath: /hostlogs
+      volumes:
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+        - name: host-logs
+          hostPath:
+            path: /var/log
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: accounts-api
+  namespace: accounts
+rules:
+  - apiGroups: [""]
+    resources: ["secrets", "pods", "configmaps"]
+    verbs: ["*"]

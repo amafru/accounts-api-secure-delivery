@@ -1,3 +1,5 @@
+# PLACEHOLDER: replaced with the real KMS public key after `terraform apply` creates the signing key.
+# Not a valid key yet, so image signature verification stays in Audit mode (see policies/kyverno/verify-images.yaml).
 -----BEGIN PUBLIC KEY-----
 REPLACE-WITH-OUTPUT-OF: cosign public-key --key awskms:///alias/accounts-api-signing
 -----END PUBLIC KEY-----

@@ -7,6 +7,8 @@
 #   - on lapse the entry stops suppressing the finding AND the check fails loudly
 # Changes to this file need a security CODEOWNER review and a verified (signed) commit,
 # both enforced by branch protection (repo settings, not code in this repo).
+# DEMONSTRATION ENTRY: W-2026-001 is a placeholder (CVE-2099-0001 does not exist) showing the format.
+# It expires 2026-11-04; after that the waivers job fails by design (lapse behaviour). Replace or empty the list.
 waivers:
   - id: W-2026-001
     tool: trivy
